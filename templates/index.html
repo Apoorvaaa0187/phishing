@@ -1,0 +1,187 @@
+from pathlib import Path
+
+html = r'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07111f">
+<title>PhishShield | Security Operations</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#07111f;--bg2:#0a1728;--panel:#0e1d30;--panel2:#12243a;
+  --line:#20344c;--text:#e8f0f8;--muted:#91a4ba;--muted2:#6f849d;
+  --cyan:#43d9e6;--green:#3ddc97;--red:#ff647c;--amber:#ffbd59;
+  --shadow:0 18px 50px rgba(0,0,0,.22);
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 15% -10%,#15314c 0,transparent 38%),var(--bg);color:var(--text);font:14px/1.55 Inter,Segoe UI,Arial,sans-serif}
+button,input{font:inherit}
+.topbar{height:72px;border-bottom:1px solid var(--line);background:rgba(7,17,31,.9);display:flex;align-items:center;justify-content:space-between;padding:0 max(24px,calc((100% - 1320px)/2));position:sticky;top:0;z-index:5;backdrop-filter:blur(14px)}
+.brand{display:flex;align-items:center;gap:12px;font-size:19px;font-weight:800;letter-spacing:.2px}
+.brandmark{width:36px;height:36px;border:1px solid #2c6071;border-radius:11px;display:grid;place-items:center;color:var(--cyan);background:#102c3d;font-size:19px}
+.brand span{color:var(--cyan)}
+.topright{display:flex;align-items:center;gap:18px;color:var(--muted);font-size:12px}
+.live{display:inline-flex;align-items:center;gap:8px;color:#b6f5d8;background:#103329;border:1px solid #1e654c;padding:7px 11px;border-radius:30px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 12px var(--green)}
+.wrap{max-width:1320px;margin:0 auto;padding:34px 24px 60px}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);font-weight:800}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin-bottom:26px}
+.hero h1{font-size:clamp(27px,4vw,38px);line-height:1.15;letter-spacing:-.04em;margin:7px 0 8px}
+.hero p{color:var(--muted);margin:0;max-width:720px}
+.status{background:#102337;border:1px solid #24435d;color:#b8d4e7;padding:9px 13px;border-radius:9px;font-size:12px;white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px}
+.card{background:linear-gradient(145deg,rgba(17,36,57,.98),rgba(11,26,43,.98));border:1px solid var(--line);border-radius:16px;padding:21px;box-shadow:var(--shadow);min-width:0}
+.span12{grid-column:span 12}.span8{grid-column:span 8}.span6{grid-column:span 6}.span4{grid-column:span 4}
+.cardhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.card h2{font-size:15px;letter-spacing:.01em;margin:0;font-weight:750}
+.kicker{color:var(--muted2);font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:800}
+.sub{font-size:12px;color:var(--muted);margin:5px 0 0}
+.pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#0a192a;border-radius:30px;padding:6px 10px;color:var(--muted);font-size:11px}
+.pill.cyan{color:#a8f5fa;border-color:#245b69;background:#0c2937}
+.urlrow{display:flex;gap:10px}
+.urlbox{display:flex;align-items:center;gap:10px;flex:1;min-width:0;background:#071524;border:1px solid #2a4058;border-radius:11px;padding:0 14px}
+.urlbox:focus-within{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(67,217,230,.1)}
+.urlicon{color:var(--cyan);font-size:16px}
+.urlrow input{width:100%;min-width:0;background:transparent;border:0;outline:0;color:var(--text);padding:14px 0;font-size:14px}
+.urlrow input::placeholder{color:#627992}
+.btn{border:1px solid #2b7180;border-radius:10px;padding:12px 17px;background:linear-gradient(135deg,#1a9bab,#16778b);color:white;font-weight:750;cursor:pointer;transition:.18s}
+.btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.btn:disabled{opacity:.55;cursor:wait;transform:none}
+.btn.secondary{background:#142a40;border-color:#29425c;color:#c4d7e9}
+.notice{font-size:11px;color:var(--muted2);margin-top:10px}
+.scanlayout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(220px,.7fr);gap:18px;align-items:stretch}
+.scanhint{border:1px solid #244056;background:linear-gradient(135deg,#10293b,#0c1c2d);border-radius:12px;padding:15px;display:flex;gap:12px;align-items:flex-start}
+.scanhint .shield{font-size:21px;color:var(--cyan)}
+.scanhint b{display:block;font-size:12px;margin-bottom:3px}
+.scanhint p{margin:0;color:var(--muted);font-size:11px}
+.result{display:none;margin-top:17px;padding:17px;border:1px solid var(--line);border-radius:12px;background:#0a1929}
+.result.good{border-color:#22684f;background:linear-gradient(110deg,#102f2b,#0b1d2a)}
+.result.bad{border-color:#773747;background:linear-gradient(110deg,#351b2a,#171b2b)}
+.resulttop{display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap}
+.result strong{font-size:19px;display:block}
+.result .score{font-size:24px;font-weight:850;letter-spacing:-.03em}
+.good .score{color:var(--green)}.bad .score{color:var(--red)}
+.resultmeta{color:var(--muted);font-size:11px;margin-top:5px}
+.error{display:none;color:#ffc0c8;background:#3b1c2a;border:1px solid #7b394a;padding:11px 13px;border-radius:9px;margin-top:12px;font-size:12px}
+.sectionlabel{display:flex;align-items:center;gap:9px;margin:20px 0 10px;color:#c6d5e4;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
+.sectionlabel:after{content:"";height:1px;background:var(--line);flex:1}
+.featurelist{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.feature{background:#0a1929;border:1px solid #1c3046;padding:9px 11px;border-radius:9px;font-size:10px;color:var(--muted);text-transform:capitalize;overflow-wrap:anywhere}
+.feature b{display:block;font-size:13px;color:#dce9f5;margin-top:2px;font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.metric{padding:15px;border:1px solid #1d334a;background:#0a1929;border-radius:11px;min-width:0}
+.metric label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+.metric b{font-size:20px;letter-spacing:-.025em;display:block;overflow-wrap:anywhere}
+.metric:first-child b{color:var(--cyan);font-size:17px}
+.tablewrap{overflow:auto;margin-top:17px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:12px 11px;border-bottom:1px solid #20334a;white-space:nowrap}
+th{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:750}
+td{color:#d5e2ee;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:#12263a}
+tbody td:first-child{font-weight:750;color:#f0f6fb}
+.charts{height:290px;position:relative}
+.chartnote{color:var(--muted2);font-size:10px;margin-top:10px}
+.cmgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.cm{border:1px solid #20364e;border-radius:11px;padding:13px;background:#0a1929;min-width:0}
+.cm h3{font-size:12px;margin:0 0 11px;color:#e2edf7}
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.cell{border-radius:8px;padding:12px 7px;text-align:center;background:#132c40;border:1px solid #23445a}
+.cell.tn,.cell.tp{background:#10352f;border-color:#1c5d4d}
+.cell.fp,.cell.fn{background:#39202d;border-color:#663346}
+.cell b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.cell small{display:block;color:#a9bbcb;font-size:9px;margin-top:3px}
+.axisnote{font-size:10px;color:var(--muted2);margin-top:9px}
+.foot{font-size:11px;color:var(--muted2);margin-top:22px;padding:14px 2px;border-top:1px solid var(--line)}
+@media(max-width:950px){.span8,.span6,.span4{grid-column:span 12}.cmgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.scanlayout{grid-template-columns:1fr}}
+@media(max-width:620px){.topbar{padding:0 16px;height:62px}.topright .topcaption{display:none}.wrap{padding:25px 14px 45px}.hero{display:block}.status{display:inline-block;margin-top:14px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.featurelist{grid-template-columns:repeat(2,minmax(0,1fr))}.urlrow{flex-direction:column}.cmgrid{grid-template-columns:1fr}.card{padding:16px}.charts{height:250px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="brandmark">⌁</div>Phish<span>Shield</span></div>
+  <div class="topright"><span class="topcaption">SECURITY OPERATIONS CENTER</span><span class="live"><i class="dot"></i> Detection system</span></div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <div><div class="eyebrow">Threat intelligence / URL analysis</div><h1>Phishing threat monitor</h1><p>Inspect suspicious links, review URL indicators, and compare machine-learning models on a held-out evaluation set.</p></div>
+    <div id="status" class="status">Checking model status…</div>
+  </section>
+
+  <div class="grid">
+    <section class="card span12">
+      <div class="cardhead"><div><div class="kicker">01 / Live inspection</div><h2 style="margin-top:5px">URL threat scanner</h2><p class="sub">Paste a URL to inspect its lexical and structural indicators.</p></div><span class="pill cyan">● URL-only analysis</span></div>
+      <div class="scanlayout">
+        <div>
+          <div class="urlrow">
+            <div class="urlbox"><span class="urlicon">⌕</span><input id="url" type="text" placeholder="https://example.com/login/verify" autocomplete="url" spellcheck="false"></div>
+            <button id="scan" class="btn">Analyze URL&nbsp; →</button>
+          </div>
+          <div class="notice">The scanner analyzes the submitted URL string only. It does not visit, open, or execute the website.</div>
+        </div>
+        <div class="scanhint"><div class="shield">◈</div><div><b>Safe analysis mode</b><p>Do not open suspicious links. Paste the URL here for pattern-based screening.</p></div></div>
+      </div>
+      <div id="scanError" class="error"></div>
+      <div id="scanResult" class="result"></div>
+      <div id="features" class="featurelist"></div>
+    </section>
+
+    <section class="card span12">
+      <div class="cardhead"><div><div class="kicker">02 / Evaluation controls</div><h2 style="margin-top:5px">Model evaluation</h2><p class="sub">Metrics below come from the held-out test set, not the URL currently being scanned.</p></div><span class="pill">Reproducible evaluation</span></div>
+      <div class="actions"><button id="refresh" class="btn secondary">↻ Reload results</button><button id="retrain" class="btn">▶ Retrain &amp; evaluate</button></div>
+      <div id="evalError" class="error"></div><div id="datasetMeta" class="notice"></div>
+    </section>
+
+    <section class="card span12">
+      <div class="cardhead"><div><div class="kicker">03 / Performance overview</div><h2 style="margin-top:5px">Model comparison</h2></div><span class="pill">Same held-out test set</span></div>
+      <div id="summary" class="metrics"></div>
+      <div class="tablewrap"><table><thead><tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1 score</th><th>ROC-AUC</th><th>PR-AUC</th></tr></thead><tbody id="comparison"></tbody></table></div>
+    </section>
+
+    <section class="card span6"><div class="cardhead"><div><div class="kicker">04 / Threshold performance</div><h2 style="margin-top:5px">ROC curve</h2><p class="sub">True positive rate vs false positive rate.</p></div><span class="pill">Phishing = positive</span></div><div class="charts"><canvas id="rocChart"></canvas></div><div class="chartnote">The dashed diagonal represents random classification.</div></section>
+    <section class="card span6"><div class="cardhead"><div><div class="kicker">05 / Model ranking</div><h2 style="margin-top:5px">F1-score comparison</h2><p class="sub">Balance between precision and recall.</p></div><span class="pill">Higher is better</span></div><div class="charts"><canvas id="scoreChart"></canvas></div></section>
+
+    <section class="card span12"><div class="cardhead"><div><div class="kicker">06 / Classification errors</div><h2 style="margin-top:5px">Confusion matrices</h2><p class="sub">Rows = actual class; columns = predicted class. Class 1 is phishing; class 0 is legitimate.</p></div><span class="pill">Test-set predictions</span></div><div id="matrices" class="cmgrid"></div><div class="axisnote">TN: legitimate correctly identified · FP: legitimate incorrectly flagged · FN: phishing missed · TP: phishing correctly detected</div></section>
+  </div>
+  <p class="foot">PhishShield is a research prototype. A “likely legitimate” result is not a guarantee of safety. Dataset-based metrics do not guarantee detection of new or zero-day phishing websites.</p>
+</main>
+
+<script>
+let rocChart=null,scoreChart=null;
+const $=id=>document.getElementById(id);
+const pct=x=>(100*x).toFixed(2)+'%';
+async function jsonFetch(url,opts={}){const r=await fetch(url,{cache:'no-store',...opts});const d=await r.json();if(!r.ok)throw new Error(d.error||'Request failed');return d}
+function showError(id,msg){$(id).style.display='block';$(id).textContent=msg}
+function clearError(id){$(id).style.display='none';$(id).textContent=''}
+function chartUnavailable(){const msg='Chart library unavailable. Check your internet connection or Chart.js CDN access.';['rocChart','scoreChart'].forEach(id=>{const c=$(id);if(c&&c.parentElement){c.style.display='none';c.parentElement.dataset.error=msg;c.parentElement.style.color='#ffbd59';c.parentElement.textContent=msg}})}
+function render(data){
+  const names=Object.keys(data.metrics||{});
+  $('status').textContent='● Model ready • '+data.dataset_name;
+  $('datasetMeta').textContent=`Dataset: ${data.dataset_name} · ${data.usable_unique_urls.toLocaleString()} unique URLs · ${data.train_rows.toLocaleString()} train / ${data.test_rows.toLocaleString()} test · ${data.split_method} · SHA-256 ${data.dataset_sha256.slice(0,12)}…`;
+  $('summary').innerHTML=`<div class="metric"><label>Best F1 model</label><b>${data.best_model}</b></div><div class="metric"><label>Unique URLs</label><b>${data.usable_unique_urls.toLocaleString()}</b></div><div class="metric"><label>Phishing examples</label><b>${data.phishing_rows.toLocaleString()}</b></div><div class="metric"><label>Legitimate examples</label><b>${data.legitimate_rows.toLocaleString()}</b></div>`;
+  $('comparison').innerHTML=names.map(n=>{const m=data.metrics[n];return `<tr><td>${n}</td><td>${pct(m.accuracy)}</td><td>${pct(m.precision)}</td><td>${pct(m.recall)}</td><td>${pct(m.f1)}</td><td>${pct(m.roc_auc)}</td><td>${pct(m.pr_auc)}</td></tr>`}).join('');
+  $('matrices').innerHTML=names.map(n=>{const m=data.metrics[n].confusion_matrix;return `<div class="cm"><h3>${n}</h3><div class="matrix"><div class="cell tn"><b>${m[0][0].toLocaleString()}</b><small>TN · legit → legit</small></div><div class="cell fp"><b>${m[0][1].toLocaleString()}</b><small>FP · legit → phish</small></div><div class="cell fn"><b>${m[1][0].toLocaleString()}</b><small>FN · phish → legit</small></div><div class="cell tp"><b>${m[1][1].toLocaleString()}</b><small>TP · phish → phish</small></div></div></div>`}).join('');
+  if(typeof Chart==='undefined'){chartUnavailable();return}
+  const gridColor='rgba(145,164,186,.13)',tickColor='#91a4ba';
+  const datasets=names.map(n=>({label:n,data:data.metrics[n].roc_curve.fpr.map((x,j)=>({x,y:data.metrics[n].roc_curve.tpr[j]})),borderWidth:2,pointRadius:0,pointHitRadius:8,tension:0,fill:false}));
+  if(rocChart)rocChart.destroy();
+  rocChart=new Chart($('rocChart'),{type:'line',data:{datasets:[...datasets,{label:'Random baseline',data:[{x:0,y:0},{x:1,y:1}],borderColor:'#71849a',borderDash:[6,6],pointRadius:0,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'nearest',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#b9c9d8',usePointStyle:true,boxWidth:8,padding:15,font:{size:10}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: FPR ${Number(c.parsed.x).toFixed(3)}, TPR ${Number(c.parsed.y).toFixed(3)}`}}},scales:{x:{type:'linear',min:0,max:1,title:{display:true,text:'False positive rate',color:tickColor},ticks:{color:tickColor},grid:{color:gridColor}},y:{min:0,max:1,title:{display:true,text:'True positive rate',color:tickColor},ticks:{color:tickColor},grid:{color:gridColor}}}}});
+  if(scoreChart)scoreChart.destroy();
+  scoreChart=new Chart($('scoreChart'),{type:'bar',data:{labels:names,datasets:[{label:'F1-score',data:names.map(n=>data.metrics[n].f1),backgroundColor:['#43d9e6','#3ddc97','#ffbd59','#8b9cff'],borderRadius:6,borderSkipped:false,maxBarThickness:48}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`F1 score: ${pct(c.parsed.x)}`}}},scales:{x:{min:0,max:1,ticks:{color:tickColor,callback:v=>(v*100)+'%'},grid:{color:gridColor}},y:{ticks:{color:'#dce8f3'},grid:{display:false}}}}});
+}
+async function load(){clearError('evalError');try{const d=await jsonFetch('/api/metrics');render(d)}catch(e){showError('evalError',e.message);$('status').textContent='Model unavailable'}}
+$('refresh').onclick=load;
+$('retrain').onclick=async()=>{clearError('evalError');$('retrain').disabled=true;$('retrain').textContent='Training…';try{const d=await jsonFetch('/api/evaluate',{method:'POST'});render(d.metrics)}catch(e){showError('evalError',e.message)}finally{$('retrain').disabled=false;$('retrain').textContent='▶ Retrain & evaluate'}};
+$('scan').onclick=async()=>{clearError('scanError');$('scanResult').style.display='none';$('features').innerHTML='';$('scan').disabled=true;$('scan').textContent='Analyzing…';try{const d=await jsonFetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:$('url').value})});const r=$('scanResult');r.style.display='block';r.className='result '+(d.is_phishing?'bad':'good');r.innerHTML=`<div class="resulttop"><div><div class="kicker">Screening verdict</div><strong>${d.prediction}</strong><div class="resultmeta">Model: ${d.model}</div></div><div><div class="kicker">Phishing score</div><div class="score">${d.phishing_score===null?'N/A':pct(d.phishing_score)}</div></div></div><div class="resultmeta" style="margin-top:12px">${d.warning}</div>`;$('features').innerHTML=Object.entries(d.features).map(([k,v])=>`<div class="feature">${k.replaceAll('_',' ')}<b>${Number(v).toFixed(3)}</b></div>`).join('')}catch(e){showError('scanError',e.message)}finally{$('scan').disabled=false;$('scan').textContent='Analyze URL →'}};
+$('url').addEventListener('keydown',e=>{if(e.key==='Enter')$('scan').click()});
+load();
+</script>
+</body>
+</html>
+'''
+out = Path("/mnt/data/PhishShield_dashboard_redesign.html")
+out.write_text(html, encoding="utf-8")
+print(f"Created {out} ({out.stat().st_size:,} bytes)")
